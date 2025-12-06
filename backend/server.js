@@ -3,6 +3,7 @@ const multer = require("multer");
 const sharp = require("sharp");
 const fs = require("fs");
 const path = require("path");
+require("dotenv").config();
 
 const app = express();
 const upload = multer();
@@ -11,6 +12,20 @@ let lastImage = null;
 let alertActive = false;
 let lastDiff = 0;
 let lastTimestamp = null;
+
+const DISCORD_WEBHOOK_URL = process.env.DISCORD_WEBHOOK_URL;
+
+async function sendDiscordMessage(message) {
+  try {
+    await fetch(DISCORD_WEBHOOK_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ content: message }),
+    });
+  } catch (err) {
+    console.error("Discord error:", err.message);
+  }
+}
 
 async function diffImages(img1, img2) {
   const resized1 = sharp(img1).resize(100, 100).greyscale();
@@ -40,6 +55,11 @@ app.post("/refresh", upload.single("file"), async (req, res) => {
       if (lastDiff > 10) {
         alertActive = true;
         changed = true;
+
+        sendDiscordMessage(
+          `Something is happening!\n
+          https://w.tabors.site/image/latest.jpg`
+        );
       }
     }
 
