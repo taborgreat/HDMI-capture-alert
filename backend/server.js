@@ -13,6 +13,9 @@ let alertActive = false;
 let lastDiff = 0;
 let lastTimestamp = null;
 
+let notifyM = true;
+let notifyT = true;
+
 const DISCORD_WEBHOOK_URL = process.env.DISCORD_WEBHOOK_URL;
 
 async function sendDiscordMessage(message) {
@@ -45,6 +48,22 @@ async function diffImages(img1, img2) {
   return Math.sqrt(sum / d1.length);
 }
 
+app.get("/notify-state", (req, res) => {
+  res.json({
+    notifyM,
+    notifyT,
+  });
+});
+
+app.post("/notify-state", express.json(), (req, res) => {
+  const { m, t } = req.body;
+
+  if (typeof m === "boolean") notifyM = m;
+  if (typeof t === "boolean") notifyT = t;
+
+  res.json({ ok: true, notifyM, notifyT });
+});
+
 app.post("/refresh", upload.single("file"), async (req, res) => {
   try {
     const newImage = req.file.buffer;
@@ -56,10 +75,15 @@ app.post("/refresh", upload.single("file"), async (req, res) => {
         alertActive = true;
         changed = true;
 
-        sendDiscordMessage(
-          `Something is happening!\n
-          https://w.tabors.site/image/latest.jpg`
-        );
+        if (notifyM) {
+          sendDiscordMessage("temp");
+        }
+
+        if (notifyT) {
+          sendDiscordMessage(
+            "Something is happening!\nhttps://w.tabors.site/ui"
+          );
+        }
       }
     }
 

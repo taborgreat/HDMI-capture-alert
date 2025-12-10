@@ -1,6 +1,6 @@
 #!/bin/bash
 
-SERVER_URL="http://192.168.1.50:9669/upload"
+SERVER_URL="https://w.tabors.site/refresh"
 CAPTURE_PATH="/tmp/frame.jpg"
 CAPTURE_DEVICE="/dev/video0"
 INTERVAL=60

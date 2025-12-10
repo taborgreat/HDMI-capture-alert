@@ -19,3 +19,9 @@ body,
     opacity: 1;
   }
 }
+
+/* Fix the hover menu - use !important to override inline styles */
+.notify-hotspot:hover .notify-panel {
+  opacity: 1 !important;
+  pointer-events: auto !important;
+}

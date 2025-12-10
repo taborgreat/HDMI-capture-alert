@@ -7,28 +7,41 @@ function App() {
   const [imgKey, setImgKey] = useState(Date.now());
   const [showPopup, setShowPopup] = useState(false);
 
+  const [notifyM, setNotifyM] = useState(true);
+  const [notifyT, setNotifyT] = useState(true);
+
   useEffect(() => {
     refresh();
+    loadNotifyState();
     const timer = setInterval(refresh, 60000);
     return () => clearInterval(timer);
   }, []);
 
+  const loadNotifyState = async () => {
+    const res = await fetch("/notify-state");
+    const data = await res.json();
+    setNotifyM(data.notifyM);
+    setNotifyT(data.notifyT);
+  };
+
+  const updateNotify = async (m, t) => {
+    await fetch("/notify-state", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ m, t }),
+    });
+  };
+
   const refresh = async () => {
     setImgKey(Date.now());
-
     try {
       const res = await fetch("/status");
       const data = await res.json();
-
       setAlertActive(data.alertActive);
       setTimestamp(data.timestamp);
-
-      // Trigger popup whenever alert starts
-      if (data.alertActive) {
-        setShowPopup(true);
-      }
+      if (data.alertActive) setShowPopup(true);
     } catch (err) {
-      console.error("Status error:", err);
+      console.error(err);
     }
   };
 
@@ -44,24 +57,75 @@ function App() {
         backgroundColor: alertActive ? "red" : "black",
         color: "white",
         minHeight: "100vh",
-        padding: 0,
-        margin: 0,
-        transition: "background-color 0.4s ease",
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
-        justifyContent: "flex-start",
+        padding: "12px",
+        boxSizing: "border-box",
       }}
     >
-      {/* Flashing Popup */}
+      {/* Top-right hover hotspot */}
+      <div
+        className="notify-hotspot"
+        style={{
+          position: "fixed",
+          top: 0,
+          right: 0,
+          width: 200,
+          height: 200,
+          zIndex: 1100,
+        }}
+      >
+        <div
+          className="notify-panel"
+          style={{
+            position: "absolute",
+            top: 10,
+            right: 10,
+            background: "rgba(0,0,0,0.85)",
+            padding: 14,
+            borderRadius: 8,
+            opacity: 0,
+            pointerEvents: "none",
+            transition: "opacity 0.2s ease",
+            whiteSpace: "nowrap",
+          }}
+        >
+          <label style={{ cursor: "pointer" }}>
+            <input
+              type="checkbox"
+              checked={notifyM}
+              onChange={(e) => {
+                const v = e.target.checked;
+                setNotifyM(v);
+                updateNotify(v, notifyT);
+              }}
+              style={{ cursor: "pointer" }}
+            />
+            {" "}Notify M
+          </label>
+          <br />
+          <label style={{ cursor: "pointer", marginTop: 8, display: "inline-block" }}>
+            <input
+              type="checkbox"
+              checked={notifyT}
+              onChange={(e) => {
+                const v = e.target.checked;
+                setNotifyT(v);
+                updateNotify(notifyM, v);
+              }}
+              style={{ cursor: "pointer" }}
+            />
+            {" "}Notify T
+          </label>
+        </div>
+      </div>
+
       {showPopup && (
         <div
           style={{
             position: "fixed",
-            top: 0,
-            left: 0,
-            width: "100%",
-            height: "100%",
+            inset: 0,
             backgroundColor: "rgba(255,0,0,0.85)",
             display: "flex",
             alignItems: "center",
@@ -73,23 +137,23 @@ function App() {
           <div
             style={{
               background: "#330000",
-              padding: "40px",
-              borderRadius: "10px",
+              padding: 40,
+              borderRadius: 10,
               textAlign: "center",
-              fontSize: "28px",
+              fontSize: 28,
               fontWeight: "bold",
-              color: "white",
               boxShadow: "0 0 20px red",
             }}
           >
             🚨 SOMETHING HAPPENING 🚨
-            <br /><br />
+            <br />
+            <br />
             <button
               onClick={acknowledge}
               style={{
                 padding: "12px 25px",
-                fontSize: "18px",
-                borderRadius: "6px",
+                fontSize: 18,
+                borderRadius: 6,
                 background: "white",
                 color: "red",
                 border: "none",
@@ -103,18 +167,17 @@ function App() {
         </div>
       )}
 
-      <h2 style={{ marginTop: "20px", color: "darkgray" }}>Flexential</h2>
-      <p style={{ marginTop: "10px", textAlign: "center", color: "gray" }}>
+      <p style={{ marginTop: 10, textAlign: "center", color: "gray" }}>
         {timestamp ? (
           <>
-            <span style={{ fontSize: "28px", color: "white" }}>
+            <span style={{ fontSize: 28, color: "white" }}>
               {new Date(timestamp).toLocaleTimeString([], {
                 hour: "numeric",
                 minute: "2-digit",
               })}
             </span>
             <br />
-            <span style={{ fontSize: "12px", opacity: 0.4 }}>
+            <span style={{ fontSize: 15, opacity: 0.7 }}>
               {new Date(timestamp).toLocaleDateString()}
             </span>
           </>
@@ -123,28 +186,26 @@ function App() {
         )}
       </p>
 
-
-      {/* Force 720p */}
       <div
         style={{
-          width: "1280px",
-          height: "720px",
-          overflow: "hidden",
+          width: "100%",
+          maxWidth: 1280,
+          aspectRatio: "16/9",
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          background: "black",
-          marginTop: "20px",
           border: "3px solid white",
-          borderRadius: "10px",
+          borderRadius: 10,
+          overflow: "hidden",
         }}
       >
         <img
           src={`/image/latest.jpg?cacheBust=${imgKey}`}
           alt="monitor"
           style={{
-            maxWidth: "100%",
-            maxHeight: "100%",
+            width: "100%",
+            height: "100%",
+            objectFit: "contain"
           }}
         />
       </div>
